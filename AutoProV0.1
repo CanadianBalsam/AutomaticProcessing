@@ -1,0 +1,63 @@
+Zen.Application.Documents.RemoveAll(False)
+
+#####################################
+#### Define functions
+#####################################
+
+def newFile(stringInput):
+    newName = str(stringInput)
+    #print "Added: ", ", ".join(newName)
+    newNameR = newName[:-2]
+    #print newNameR
+    newNameL = newNameR[2:]
+    rows = table.RowCount
+    #print newNameL
+    table.SetValue(rows,0,str(newNameL))
+    print newNameL
+    image1 = Zen.Application.Documents.GetByName(newNameL)
+    print image1
+    #image2 = Zen.Processing.Filter.Edges.Highpass(image1, ZenNormalizeMode.Auto, 1, 3, ZenThirdProcessingDimension.None, True)
+    Zen.Application.Documents.Add(image1)
+    
+    
+#####################################
+#### Import libraries
+#####################################
+
+from System.IO import Directory
+from System.Threading import Thread
+import time
+
+####################################################################################################################################################
+####  Full code
+####################################################################################################################################################
+
+
+####  Define folder to monitor
+path_to_watch = "C:\\Users\\CADSTEV\\Desktop\\StreamTest"
+beforeDict = dict ([(f, None) for f in Directory.GetFiles(path_to_watch)])
+print beforeDict
+
+#### Define Table
+table = ZenTable()
+table.Name = 'Processing File List'
+table.Columns.Add('File Name')
+table.Columns.Add('Other')
+Zen.Application.Documents.Add(table)
+
+
+while 1:
+    time.sleep (1)
+    
+    afterDict = dict ([(f, None) for f in Directory.GetFiles(path_to_watch)])
+    #print afterDict
+    
+    added = [f for f in afterDict if not f in beforeDict]
+    removed = [f for f in beforeDict if not f in afterDict]
+    
+    if added: 
+        newFile(added)
+    if removed: 
+        print "Removed: ", ", ".join (removed)
+      
+    beforeDict = afterDict
