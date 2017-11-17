@@ -7,11 +7,11 @@ Zen.Application.Documents.RemoveAll(False)
 def newFile(stringInput):
     rows = table.RowCount
     table.SetValue(rows,0,str(stringInput))
+    table.SetValue(rows,1,"in progress")
     return
     
 def processFile(stringInput):
     rows = table.RowCount
-    table.SetValue(rows-1,1,"in progress")
     fileName = str(path_to_watch) + "\\" + str(stringInput)
     print fileName    
     image1 = Zen.Application.LoadImage(fileName,False)
@@ -42,10 +42,10 @@ import time
 
 
 ####  Define folder to monitor
-path_to_watch = "C:\\Users\\CADSTEV\\Desktop\\MonitorTest"
+path_to_watch = "C:\\Users\\CADSTEV\\Desktop\\StreamTest"
 #beforeDict = dict ([(f, None) for f in Directory.GetFiles(path_to_watch)])
-beforeList = listdir(path_to_watch)
-print "List of files at start = " + str(beforeList)
+oldList = listdir(path_to_watch)
+#print "List of files at start = " + str(oldList)
 
 #### Define Table
 table = ZenTable()
@@ -57,13 +57,12 @@ Zen.Application.Documents.Add(table)
 
 while 1:
     time.sleep (1)
-    afterList = listdir(path_to_watch)
-    #if afterList.Count > beforeList.Count:
-    for val in afterList:
-        if val not in beforeList:
+    newList = listdir(path_to_watch)
+    for val in newList:
+        if val not in oldList:
             if val.endswith(".czi"):
                 newFile(val)
                 processFile(val)
                 rows = table.RowCount
                 table.SetValue(rows-1,1,"processed")
-    beforeList = afterList
+    oldList = newList
