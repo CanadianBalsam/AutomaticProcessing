@@ -1,0 +1,69 @@
+Zen.Application.Documents.RemoveAll(False)
+
+#####################################
+#### Define functions
+#####################################
+
+def newFile(stringInput):
+    rows = table.RowCount
+    table.SetValue(rows,0,str(stringInput))
+    return
+    
+def processFile(stringInput):
+    rows = table.RowCount
+    table.SetValue(rows-1,1,"in progress")
+    fileName = str(path_to_watch) + "\\" + str(stringInput)
+    print fileName    
+    image1 = Zen.Application.LoadImage(fileName,False)
+    if image1.Bounds.IsZStack:
+        image2 = ZenLSM.Processing.Utilities.Airyscan(image1,True,False)
+    else:
+        image2 = ZenLSM.Processing.Utilities.Airyscan(image1, False, False)
+    Zen.Application.Documents.Add(image2)
+    datatable1 = Zen.Application.Documents.GetByName("Processing File List")
+    Zen.Application.Documents.ActiveDocument = datatable1
+    
+    
+#####################################
+#### Import libraries and set variables
+#####################################
+
+pythonPath = "C:\\Python27\\Lib"
+sys.path.append(pythonPath)
+
+from System.IO import Directory
+from System.Threading import Thread
+from os import listdir
+import time
+
+####################################################################################################################################################
+####  Full code
+####################################################################################################################################################
+
+
+####  Define folder to monitor
+path_to_watch = "C:\\Users\\CADSTEV\\Desktop\\MonitorTest"
+#beforeDict = dict ([(f, None) for f in Directory.GetFiles(path_to_watch)])
+beforeList = listdir(path_to_watch)
+print "List of files at start = " + str(beforeList)
+
+#### Define Table
+table = ZenTable()
+table.Name = 'Processing File List'
+table.Columns.Add('File Name')
+table.Columns.Add('Status')
+Zen.Application.Documents.Add(table)
+
+
+while 1:
+    time.sleep (1)
+    afterList = listdir(path_to_watch)
+    #if afterList.Count > beforeList.Count:
+    for val in afterList:
+        if val not in beforeList:
+            if val.endswith(".czi"):
+                newFile(val)
+                processFile(val)
+                rows = table.RowCount
+                table.SetValue(rows-1,1,"processed")
+    beforeList = afterList
