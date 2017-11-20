@@ -1,0 +1,95 @@
+Zen.Application.Documents.RemoveAll(False)
+
+#### Define Table
+filelistTable = ZenTable()
+filelistTable.Name = 'Processing File List'
+filelistTable.Columns.Add('File Name')
+filelistTable.Columns.Add('Status')
+Zen.Application.Documents.Add(filelistTable)
+
+
+#####################################
+#### Define functions
+#####################################
+
+def checkFolder(oldList):
+    newList = listdir(activeFolder)
+    for val in newList:
+        if val not in oldList:
+            if val.endswith(".czi"):
+                rows = filelistTable.RowCount
+                filelistTable.SetValue(rows,0,str(val))
+                filelistTable.SetValue(rows,1,"pending")
+    oldList = newList
+    return(oldList)
+
+
+def newFile():
+    pendingfileList = []
+    for i in range (0,filelistTable.RowCount):
+        fileStatus = str(filelistTable.GetValue(i,1))
+        if fileStatus=="pending":
+            currentFile = str(filelistTable.GetValue(i,0))
+            pendingfileList.append(currentFile)
+    print pendingfileList
+    return(pendingfileList)
+
+def processFile(activefilePath):
+    image1 = Zen.Application.LoadImage(activefilePath,False)
+    if image1.Bounds.IsZStack:
+        image2 = ZenLSM.Processing.Utilities.Airyscan(image1,True,False)
+    else:
+        image2 = ZenLSM.Processing.Utilities.Airyscan(image1, False, False)
+    #Zen.Application.Documents.Add(image2)
+    Zen.Application.Save(image2, fileName + "_processed", False)
+    changeStatus(activefilePath)
+    #print activefilePath
+    
+def changeStatus(activefilePath):
+    for i in range (0,filelistTable.RowCount):
+        tablefileName = str(filelistTable.GetValue(i,0))
+        if activefilePath==tablefileName:
+            filelistTable.SetValue(i,1,"processed")
+
+
+    
+#####################################
+#### Import libraries and set variables
+#####################################
+
+pythonPath = "C:\\Python27\\Lib"
+sys.path.append(pythonPath)
+
+from System.IO import Directory
+from System.Threading import Thread
+from os import listdir
+import time
+
+####################################################################################################################################################
+####  Full code
+####################################################################################################################################################
+
+
+####  Define folder to monitor
+activeFolder = "C:\\StreamTest"
+#beforeDict = dict ([(f, None) for f in Directory.GetFiles(activeFolder)])
+oldList = listdir(activeFolder)
+#print "List of files at start = " + str(oldList)
+
+while 1:
+    try:
+        time.sleep (1)
+        tempList = checkFolder(oldList)                  #build a Zen table out of CZI files in the folder
+        if tempList != oldList:
+            oldList = tempList
+            pendingfileList = newFile()                     #check the Zen table for files that are "Pending"
+            for i in range(0,len(pendingfileList)):
+                try:
+                    activeFile = pendingfileList[i]
+                    activefilePath = str(activeFolder) + "\\" + str(activeFile)
+                    processFile(activefilePath)                                   #process the pending file
+                except Exception:
+                    print "processing of " + pendingfileList(i) + " caused an error, processing additional files"
+    except Exception:               #if file is not accessible, or fails the processing, pass to the next file
+        print "Windows Error"
+
